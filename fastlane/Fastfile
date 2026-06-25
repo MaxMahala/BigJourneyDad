@@ -1,20 +1,39 @@
 # fastlane/Fastfile
 default_platform :ios
-
 platform :ios do
-
   before_all do
     setup_circle_ci
   end
 
-  desc "Buils App without bitcode"
+  desc "Build App without bitcode"
   lane :build do
-    build_app(scheme: ENV['PROJ_SCHEME'],
-              project: ENV['XCODE_PROJ'],
-              include_bitcode: false)
+    profile = ENV["sigh_#{ENV['BASE_BUNDLE']}_appstore_profile-name"]
+    UI.user_error!("Profile name from match not found in ENV — did manage_provision run first?") if profile.to_s.empty?
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: ENV['XCODE_PROJ'],
+      team_id: ENV['TEAM_ID'],
+      targets: ENV['MAIN_TARGET'],
+      bundle_identifier: ENV['BASE_BUNDLE'],
+      code_sign_identity: "Apple Distribution",
+      profile_name: profile
+    )
+
+    build_app(
+      scheme: ENV['PROJ_SCHEME'],
+      project: ENV['XCODE_PROJ'],
+      include_bitcode: false,
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          ENV['BASE_BUNDLE'] => profile
+        }
+      }
+    )
   end
 
-  desc "Fetching or creating certificates in Apple Developer"
+  desc "Fetching certificates in Apple Developer (readonly — never creates in CI)"
   lane :manage_provision do
     api_key = app_store_connect_api_key(
       key_id: ENV['API_KEY_ID'],
@@ -28,19 +47,14 @@ platform :ios do
       git_user_email: "maximmagala@gmail.com",
       type: "appstore",
       app_identifier: ENV['BASE_BUNDLE'],
-      profile_name: ENV['MAIN_TARGET']+'-App',
+      profile_name: ENV['MAIN_TARGET'] + '-App',
       output_path: 'fastlane/provision',
-      readonly: false
+      readonly: true
     )
   end
 
-  desc "Updating project Team ID and Provision Profiles"
+  desc "Updating project Team ID"
   lane :update_project do
-    update_project_provisioning(
-      xcodeproj: ENV['XCODE_PROJ'],
-      profile: "fastlane/provision/AppStore_#{ENV['BASE_BUNDLE']}.mobileprovision",
-      target_filter: ENV["MAIN_TARGET"],
-    )
     update_project_team(
       path: ENV['XCODE_PROJ'],
       targets: ENV["MAIN_TARGET"],
@@ -48,7 +62,7 @@ platform :ios do
     )
   end
 
-  desc "Upload metadata, screenshots and build to App Store Connect, then sumbit for review"
+  desc "Upload metadata, screenshots and build to App Store Connect, then submit for review"
   lane :submit_build do
     deliver(
       skip_metadata: true,
@@ -99,5 +113,4 @@ platform :ios do
     build
     submit_build
   end
-
 end
