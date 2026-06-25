@@ -7,28 +7,13 @@ platform :ios do
     setup_circle_ci
   end
 
-  desc "Build App without bitcode"
-lane :build do
-  update_code_signing_settings(
-    use_automatic_signing: false,
-    path: ENV['XCODE_PROJ'],
-    team_id: ENV['TEAM_ID'],
-    bundle_identifier: ENV['BASE_BUNDLE'],
-    code_sign_identity: "Apple Distribution",
-    profile_name: ENV['MAIN_TARGET'] + '-App'
-  )
-  build_app(
-    scheme: ENV['PROJ_SCHEME'],
-    project: ENV['XCODE_PROJ'],
-    include_bitcode: false,
-    export_method: "app-store",
-    export_options: {
-      provisioningProfiles: {
-        ENV['BASE_BUNDLE'] => ENV['MAIN_TARGET'] + '-App'
-      }
-    }
-  )
-end
+  desc "Buils App without bitcode"
+  lane :build do
+    build_app(scheme: ENV['PROJ_SCHEME'],
+              project: ENV['XCODE_PROJ'],
+              include_bitcode: false)
+  end
+
   desc "Fetching or creating certificates in Apple Developer"
   lane :manage_provision do
     api_key = app_store_connect_api_key(
@@ -45,12 +30,17 @@ end
       app_identifier: ENV['BASE_BUNDLE'],
       profile_name: ENV['MAIN_TARGET']+'-App',
       output_path: 'fastlane/provision',
-      readonly: true 
+      readonly: false
     )
   end
 
   desc "Updating project Team ID and Provision Profiles"
   lane :update_project do
+    update_project_provisioning(
+      xcodeproj: ENV['XCODE_PROJ'],
+      profile: "fastlane/provision/AppStore_#{ENV['BASE_BUNDLE']}.mobileprovision",
+      target_filter: ENV["MAIN_TARGET"],
+    )
     update_project_team(
       path: ENV['XCODE_PROJ'],
       targets: ENV["MAIN_TARGET"],
