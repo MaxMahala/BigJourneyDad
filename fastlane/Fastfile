@@ -33,7 +33,7 @@ platform :ios do
     )
   end
 
-  desc "Fetching certificates in Apple Developer (readonly — never creates in CI)"
+  desc "Fetching or creating certificates in Apple Developer"
   lane :manage_provision do
     api_key = app_store_connect_api_key(
       key_id: ENV['API_KEY_ID'],
@@ -49,7 +49,7 @@ platform :ios do
       app_identifier: ENV['BASE_BUNDLE'],
       profile_name: ENV['MAIN_TARGET'] + '-App',
       output_path: 'fastlane/provision',
-      readonly: true
+      readonly: false
     )
   end
 
@@ -100,10 +100,6 @@ platform :ios do
   end
 
   desc "Build, sign and upload a new build to the App Store."
-  desc "This will do the following:"
-  desc ""
-  desc "- Create new screenshots and store them in `./fastlane/screenshots`"
-  desc "- Collect the app metadata from `./fastlane/metadata`"
   desc "- Upload screenshots + app metadata"
   desc "- Build, sign and upload the app"
   desc "- Submit the app for review"
