@@ -45,7 +45,7 @@ end
       app_identifier: ENV['BASE_BUNDLE'],
       profile_name: ENV['MAIN_TARGET']+'-App',
       output_path: 'fastlane/provision',
-      readonly: false
+      readonly: true 
     )
   end
 
