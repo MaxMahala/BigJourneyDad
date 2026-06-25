@@ -2,7 +2,6 @@ import SwiftUI
 
 struct BAS_MainTabContainerView: View {
     @EnvironmentObject var router: BAS_AppRouter
-    //
     var body: some View {
         ZStack(alignment: .bottom) {
             BAS_BackdropView()
